@@ -1,5 +1,9 @@
 {
   "version": 2,
+  "buildCommand": "composer install --no-dev --optimize-autoloader && npm ci && npm run build && php artisan config:cache && php artisan route:cache && php artisan view:cache",
+  "outputDirectory": "public",
+  "installCommand": "composer install --no-dev --optimize-autoloader && npm ci",
+  "framework": null,
   "builds": [
     {
       "src": "public/index.php",
@@ -7,6 +11,18 @@
     }
   ],
   "routes": [
+    {
+      "src": "/storage/(.*)",
+      "dest": "/public/storage/$1"
+    },
+    {
+      "src": "/build/(.*)",
+      "dest": "/public/build/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot))",
+      "dest": "/public/$1"
+    },
     {
       "src": "/(.*)",
       "dest": "/public/index.php"
@@ -17,8 +33,11 @@
   },
   "functions": {
     "public/index.php": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 1024,
+      "runtime": "php-8.2"
     }
-  }
+  },
+  "regions": ["sin1"]
 }
 

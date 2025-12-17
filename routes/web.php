@@ -14,6 +14,11 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// Health check route (for Render, monitoring, etc.)
+Route::get('/up', function () {
+    return response()->json(['status' => 'ok', 'timestamp' => now()], 200);
+});
+
 // Auth routes
 Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login']);

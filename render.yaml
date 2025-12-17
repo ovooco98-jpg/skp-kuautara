@@ -4,7 +4,7 @@ services:
     env: php
     plan: free
     region: singapore
-    buildCommand: composer install --optimize-autoloader --no-dev && npm ci && npm run build
+    buildCommand: composer install --optimize-autoloader --no-dev && npm ci && npm run build && php artisan config:cache && php artisan route:cache && php artisan view:cache
     startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
     healthCheckPath: /up
     envVars:
@@ -15,6 +15,8 @@ services:
       - key: LOG_CHANNEL
         value: stderr
       - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
         value: database
       - key: QUEUE_CONNECTION
         value: database
