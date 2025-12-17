@@ -2,12 +2,13 @@
 cmds = [
   "composer install --optimize-autoloader --no-dev",
   "npm install",
-  "npm run build",
-  "php artisan config:cache",
-  "php artisan route:cache",
-  "php artisan view:cache"
+  "npm run build"
 ]
 
 [start]
-# Perhatikan bagian --class=...
-cmd = "php artisan key:generate --force && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan db:seed --class=StaffKuaBanjarmasinUtaraSeeder --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+# Perbaikan:
+# 1. 'cp .env.example .env' -> Membuat file .env palsu agar key:generate tidak error.
+# 2. 'key:generate' -> Menulis key baru ke file .env tersebut.
+# 3. 'config:cache' -> Membaca file .env tersebut agar aplikasinya sadar ada key baru.
+
+cmd = "cp .env.example .env && php artisan key:generate --force && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan db:seed --class=StaffKuaBanjarmasinUtaraSeeder --force && php artisan serve --host=0.0.0.0 --port=$PORT"
