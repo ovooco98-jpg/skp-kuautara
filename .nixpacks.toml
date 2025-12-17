@@ -9,4 +9,5 @@ cmds = [
 ]
 
 [start]
-cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
+# Perhatikan bagian --class=...
+cmd = "php artisan migrate --force && php artisan db:seed --class=StaffKuaBanjarmasinUtaraSeeder --force && php artisan serve --host=0.0.0.0 --port=$PORT"
