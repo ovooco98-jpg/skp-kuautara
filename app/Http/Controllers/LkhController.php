@@ -7,6 +7,7 @@ use App\Models\KategoriKegiatan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -91,11 +92,13 @@ class LkhController extends Controller
             ]);
         }
 
-        // Ambil list users untuk filter
-        $users = User::aktif()
-            ->where('role', '!=', 'kepala_kua')
-            ->orderBy('name')
-            ->get(['id', 'name', 'jabatan']);
+        // Ambil list users untuk filter - cache untuk performa
+        $users = Cache::remember('users_filter_list', 3600, function () {
+            return User::aktif()
+                ->where('role', '!=', 'kepala_kua')
+                ->orderBy('name')
+                ->get(['id', 'name', 'jabatan']);
+        });
 
         // Return view untuk web
         return view('lkh.index', compact('lkh', 'users'))->with('isStaffView', true);

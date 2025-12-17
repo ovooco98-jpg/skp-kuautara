@@ -199,3 +199,4 @@ config('app.debug') // Should return false
 config('database.default') // Should return 'mysql'
 DB::connection()->getPdo(); // Should connect successfully
 ```
+

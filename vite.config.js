@@ -15,4 +15,24 @@ export default defineConfig({
             ignored: ['**/storage/framework/views/**'],
         },
     },
+    build: {
+        // Optimasi untuk production
+        cssCodeSplit: true,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'vendor': ['alpinejs'],
+                },
+            },
+        },
+        // Minify untuk production
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true, // Hapus console.log di production
+            },
+        },
+        // Chunk size warning limit
+        chunkSizeWarningLimit: 1000,
+    },
 });

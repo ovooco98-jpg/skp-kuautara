@@ -6,6 +6,7 @@ use App\Models\Lkh;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -63,40 +64,50 @@ class DashboardController extends Controller
      */
     private function dashboardKepalaKua($bulan, $tahun)
     {
-        // Total LKH per status
+        $startOfMonth = Carbon::create($tahun, $bulan, 1)->startOfDay();
+        $endOfMonth = $startOfMonth->copy()->endOfMonth()->endOfDay();
+        
+        // Optimasi: Gabungkan semua count queries dalam satu query
+        $lkhStats = Lkh::selectRaw('status, COUNT(*) as total')
+            ->byBulanTahun($bulan, $tahun)
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
         $totalLkh = [
-            'draft' => Lkh::byStatus('draft')
-                ->byBulanTahun($bulan, $tahun)
-                ->count(),
-            'selesai' => Lkh::byStatus('selesai')
-                ->byBulanTahun($bulan, $tahun)
-                ->count(),
+            'draft' => $lkhStats['draft'] ?? 0,
+            'selesai' => $lkhStats['selesai'] ?? 0,
         ];
 
-        // Total pegawai aktif
-        $totalPegawai = User::aktif()
-            ->where('role', '!=', 'kepala_kua')
-            ->count();
+        // Total pegawai aktif - cache jika memungkinkan
+        $totalPegawai = \Cache::remember('total_pegawai_aktif', 3600, function () {
+            return User::aktif()
+                ->where('role', '!=', 'kepala_kua')
+                ->count();
+        });
 
-        // LKH per pegawai
+        // LKH per pegawai - optimasi dengan select spesifik
         $lkhPerPegawai = Lkh::selectRaw('user_id, COUNT(*) as total')
             ->byBulanTahun($bulan, $tahun)
             ->groupBy('user_id')
             ->with('user:id,name,nip,jabatan')
             ->get();
 
-        // LKH hari ini
+        // LKH hari ini - optimasi tanpa eager loading yang tidak perlu
         $lkhHariIni = Lkh::whereDate('tanggal', Carbon::today())
-            ->with(['user', 'kategoriKegiatan'])
-            ->get()
             ->count();
 
-        // Statistik per minggu
-        $startOfMonth = Carbon::create($tahun, $bulan, 1);
-        $endOfMonth = $startOfMonth->copy()->endOfMonth();
-        
+        // Optimasi statistik mingguan: Query sekali untuk semua data, lalu group di PHP
+        $allLkhInMonth = Lkh::select('tanggal')
+            ->whereBetween('tanggal', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+            ->get()
+            ->groupBy(function($lkh) {
+                return Carbon::parse($lkh->tanggal)->weekOfMonth;
+            });
+
         $statistikMingguan = [];
         $currentWeek = $startOfMonth->copy();
+        $weekNumber = 1;
         
         while ($currentWeek->lte($endOfMonth)) {
             $weekEnd = $currentWeek->copy()->endOfWeek();
@@ -105,17 +116,18 @@ class DashboardController extends Controller
             }
 
             $statistikMingguan[] = [
-                'minggu' => 'Minggu ' . $currentWeek->weekOfMonth,
+                'minggu' => 'Minggu ' . $weekNumber,
                 'tanggal' => $currentWeek->format('d/m') . ' - ' . $weekEnd->format('d/m'),
-                'total' => Lkh::whereBetween('tanggal', [$currentWeek->format('Y-m-d'), $weekEnd->format('Y-m-d')])
-                    ->count()
+                'total' => $allLkhInMonth->get($weekNumber, collect())->count()
             ];
 
             $currentWeek->addWeek()->startOfWeek();
+            $weekNumber++;
         }
 
-        // Recent LKH untuk dashboard
-        $lkhTerakhir = Lkh::with(['user', 'kategoriKegiatan'])
+        // Recent LKH untuk dashboard - optimasi dengan select spesifik
+        $lkhTerakhir = Lkh::select('id', 'uraian_kegiatan', 'waktu_mulai', 'waktu_selesai', 'status', 'tanggal', 'user_id')
+            ->with('user:id,name')
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get()
@@ -126,7 +138,7 @@ class DashboardController extends Controller
                 // Handle waktu format
                 if ($waktuMulai) {
                     if (is_string($waktuMulai)) {
-                        $waktuMulai = substr($waktuMulai, 0, 5); // Extract HH:MM
+                        $waktuMulai = substr($waktuMulai, 0, 5);
                     } elseif ($waktuMulai instanceof \Carbon\Carbon || $waktuMulai instanceof \DateTime) {
                         $waktuMulai = $waktuMulai->format('H:i');
                     }
@@ -134,7 +146,7 @@ class DashboardController extends Controller
                 
                 if ($waktuSelesai) {
                     if (is_string($waktuSelesai)) {
-                        $waktuSelesai = substr($waktuSelesai, 0, 5); // Extract HH:MM
+                        $waktuSelesai = substr($waktuSelesai, 0, 5);
                     } elseif ($waktuSelesai instanceof \Carbon\Carbon || $waktuSelesai instanceof \DateTime) {
                         $waktuSelesai = $waktuSelesai->format('H:i');
                     }
@@ -172,25 +184,30 @@ class DashboardController extends Controller
      */
     private function dashboardPegawai($user, $bulan, $tahun)
     {
-        // LKH bulan ini per status
+        $startOfMonth = Carbon::create($tahun, $bulan, 1)->startOfDay();
+        $endOfMonth = $startOfMonth->copy()->endOfMonth()->endOfDay();
+        
+        // Optimasi: Gabungkan count queries
+        $lkhStats = Lkh::selectRaw('status, COUNT(*) as total')
+            ->byUser($user->id)
+            ->byBulanTahun($bulan, $tahun)
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
         $lkhBulanIni = [
-            'draft' => Lkh::byUser($user->id)
-                ->byStatus('draft')
-                ->byBulanTahun($bulan, $tahun)
-                ->count(),
-            'selesai' => Lkh::byUser($user->id)
-                ->byStatus('selesai')
-                ->byBulanTahun($bulan, $tahun)
-                ->count(),
+            'draft' => $lkhStats['draft'] ?? 0,
+            'selesai' => $lkhStats['selesai'] ?? 0,
         ];
 
         // Total LKH bulan ini
         $totalLkhBulanIni = array_sum($lkhBulanIni);
 
-        // LKH hari ini
-        $lkhHariIni = Lkh::byUser($user->id)
+        // LKH hari ini - optimasi dengan select spesifik
+        $lkhHariIni = Lkh::select('id', 'uraian_kegiatan', 'waktu_mulai', 'waktu_selesai', 'status', 'tanggal', 'kategori_kegiatan_id')
+            ->byUser($user->id)
             ->whereDate('tanggal', Carbon::today())
-            ->with('kategoriKegiatan')
+            ->with('kategoriKegiatan:id,nama')
             ->orderBy('waktu_mulai', 'asc')
             ->get()
             ->map(function($lkh) {
@@ -200,7 +217,7 @@ class DashboardController extends Controller
                 // Handle waktu format
                 if ($waktuMulai) {
                     if (is_string($waktuMulai)) {
-                        $waktuMulai = substr($waktuMulai, 0, 5); // Extract HH:MM
+                        $waktuMulai = substr($waktuMulai, 0, 5);
                     } elseif ($waktuMulai instanceof \Carbon\Carbon || $waktuMulai instanceof \DateTime) {
                         $waktuMulai = $waktuMulai->format('H:i');
                     }
@@ -208,7 +225,7 @@ class DashboardController extends Controller
                 
                 if ($waktuSelesai) {
                     if (is_string($waktuSelesai)) {
-                        $waktuSelesai = substr($waktuSelesai, 0, 5); // Extract HH:MM
+                        $waktuSelesai = substr($waktuSelesai, 0, 5);
                     } elseif ($waktuSelesai instanceof \Carbon\Carbon || $waktuSelesai instanceof \DateTime) {
                         $waktuSelesai = $waktuSelesai->format('H:i');
                     }
@@ -228,19 +245,26 @@ class DashboardController extends Controller
                 ];
             });
 
-        // LKH terakhir yang dibuat
-        $lkhTerakhir = Lkh::byUser($user->id)
-            ->with(['kategoriKegiatan', 'user'])
+        // LKH terakhir yang dibuat - optimasi dengan select spesifik
+        $lkhTerakhir = Lkh::select('id', 'uraian_kegiatan', 'waktu_mulai', 'waktu_selesai', 'status', 'tanggal', 'user_id')
+            ->byUser($user->id)
+            ->with('user:id,name')
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
-        // Statistik per minggu bulan ini
-        $startOfMonth = Carbon::create($tahun, $bulan, 1);
-        $endOfMonth = $startOfMonth->copy()->endOfMonth();
+        // Optimasi statistik mingguan: Query sekali untuk semua data
+        $allLkhInMonth = Lkh::select('tanggal')
+            ->byUser($user->id)
+            ->whereBetween('tanggal', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+            ->get()
+            ->groupBy(function($lkh) {
+                return Carbon::parse($lkh->tanggal)->weekOfMonth;
+            });
         
         $statistikMingguan = [];
         $currentWeek = $startOfMonth->copy();
+        $weekNumber = 1;
         
         while ($currentWeek->lte($endOfMonth)) {
             $weekEnd = $currentWeek->copy()->endOfWeek();
@@ -249,14 +273,13 @@ class DashboardController extends Controller
             }
 
             $statistikMingguan[] = [
-                'minggu' => 'Minggu ' . $currentWeek->weekOfMonth,
+                'minggu' => 'Minggu ' . $weekNumber,
                 'tanggal' => $currentWeek->format('d/m') . ' - ' . $weekEnd->format('d/m'),
-                'total' => Lkh::byUser($user->id)
-                    ->whereBetween('tanggal', [$currentWeek->format('Y-m-d'), $weekEnd->format('Y-m-d')])
-                    ->count()
+                'total' => $allLkhInMonth->get($weekNumber, collect())->count()
             ];
 
             $currentWeek->addWeek()->startOfWeek();
+            $weekNumber++;
         }
 
         // Format lkh terakhir untuk JSON
@@ -316,27 +339,29 @@ class DashboardController extends Controller
         $user = Auth::user();
         $tahun = $request->input('tahun', Carbon::now()->year);
 
+        // Optimasi: Query sekali untuk semua bulan
         if ($user->isKepalaKua()) {
-            // Statistik untuk semua pegawai
-            $data = [];
-            for ($bulan = 1; $bulan <= 12; $bulan++) {
-                $data[] = [
-                    'bulan' => Carbon::create($tahun, $bulan, 1)->locale('id')->translatedFormat('F'),
-                    'total' => Lkh::byBulanTahun($bulan, $tahun)
-                        ->count(),
-                ];
-            }
+            $stats = Lkh::selectRaw('MONTH(tanggal) as bulan, COUNT(*) as total')
+                ->whereYear('tanggal', $tahun)
+                ->groupBy('bulan')
+                ->pluck('total', 'bulan')
+                ->toArray();
         } else {
-            // Statistik untuk pegawai tertentu
-            $data = [];
-            for ($bulan = 1; $bulan <= 12; $bulan++) {
-                $data[] = [
-                    'bulan' => Carbon::create($tahun, $bulan, 1)->locale('id')->translatedFormat('F'),
-                    'total' => Lkh::byUser($user->id)
-                        ->byBulanTahun($bulan, $tahun)
-                        ->count(),
-                ];
-            }
+            $stats = Lkh::selectRaw('MONTH(tanggal) as bulan, COUNT(*) as total')
+                ->byUser($user->id)
+                ->whereYear('tanggal', $tahun)
+                ->groupBy('bulan')
+                ->pluck('total', 'bulan')
+                ->toArray();
+        }
+
+        // Build response dengan data yang sudah di-query
+        $data = [];
+        for ($bulan = 1; $bulan <= 12; $bulan++) {
+            $data[] = [
+                'bulan' => Carbon::create($tahun, $bulan, 1)->locale('id')->translatedFormat('F'),
+                'total' => $stats[$bulan] ?? 0,
+            ];
         }
 
         return response()->json([

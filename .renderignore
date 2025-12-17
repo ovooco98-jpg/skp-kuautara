@@ -13,4 +13,7 @@ coverage
 .DS_Store
 Thumbs.db
 *.log
+database/*.sqlite
+database/*.sqlite-journal
+vendor/.git
 

@@ -8,11 +8,65 @@
 - Tidak ada persistent storage untuk file uploads
 - Session dan cache membutuhkan storage yang persisten
 
-**Rekomendasi: Gunakan Railway** untuk deployment Laravel + MySQL di satu platform.
+## 🎯 Platform yang Direkomendasikan
+
+### Untuk Free Tier:
+1. **Render** ⭐ (Paling Direkomendasikan) - 750 jam/bulan gratis
+2. **Fly.io** ⭐ - 3 VMs gratis
+3. **Railway** - Free tier terbatas (sudah limit)
+
+### Untuk Paid:
+- Railway ($5/bulan)
+- Heroku ($5/bulan)
+- DigitalOcean App Platform
+
+**📖 Lihat [HOSTING_ALTERNATIVES.md](HOSTING_ALTERNATIVES.md) untuk detail lengkap semua alternatif hosting gratis.**
 
 ---
 
-## 🚂 Deployment ke Railway (Rekomendasi)
+## ☁️ Deployment ke Render (Rekomendasi untuk Free Tier)
+
+Render adalah alternatif terbaik untuk free tier karena:
+- ✅ 750 jam/bulan gratis (cukup untuk 1 service)
+- ✅ PostgreSQL gratis 90 hari (bisa extend atau pindah ke Supabase)
+- ✅ Auto-deploy dari GitHub
+- ✅ SSL gratis otomatis
+- ✅ Support Laravel dengan baik
+
+### Quick Start Render:
+
+1. **Setup Render Account**
+   - Daftar di [render.com](https://render.com)
+   - Connect GitHub account
+
+2. **Deploy Web Service**
+   - New → Web Service
+   - Pilih repository `lkh-kua`
+   - Render akan auto-detect `render.yaml`
+   - Atau manual setup (lihat `render.yaml`)
+
+3. **Setup PostgreSQL**
+   - New → PostgreSQL
+   - Plan: Free (90 hari)
+   - Copy connection details
+
+4. **Environment Variables**
+   - Setup sesuai `ENV_VARIABLES.md`
+   - Gunakan PostgreSQL connection string
+
+5. **Generate APP_KEY & Run Migrations**
+   - Buka Render Shell
+   - `php artisan key:generate`
+   - `php artisan migrate --force`
+   - `php artisan db:seed --class=StaffKuaBanjarmasinUtaraSeeder`
+
+**📖 Lihat:**
+- [HOSTING_ALTERNATIVES.md](HOSTING_ALTERNATIVES.md) - Panduan lengkap semua platform
+- [SETUP_PLANETSCALE.md](SETUP_PLANETSCALE.md) - Setup MySQL gratis dengan PlanetScale (Direkomendasikan)
+
+---
+
+## 🚂 Deployment ke Railway (Jika Masih Ada Credit)
 
 Railway adalah platform yang sangat cocok untuk Laravel karena:
 - ✅ Mendukung PHP/Laravel dengan baik

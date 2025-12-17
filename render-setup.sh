@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Railway Setup Script
-# Script ini membantu setup awal setelah deployment ke Railway
+# Render Setup Script
+# Script ini membantu setup awal setelah deployment ke Render
 
-echo "🚀 Railway Setup Script"
+echo "🚀 Render Setup Script"
 echo "======================"
 echo ""
 
 # Check if .env exists
 if [ ! -f .env ]; then
     echo "❌ File .env tidak ditemukan!"
-    echo "   Pastikan environment variables sudah di-set di Railway dashboard"
+    echo "   Pastikan environment variables sudah di-set di Render dashboard"
     exit 1
 fi
 
@@ -59,15 +59,15 @@ echo ""
 # Set permissions
 echo "🔐 Setting permissions..."
 chmod -R 775 storage bootstrap/cache
-chown -R www-data:www-data storage bootstrap/cache
 echo "✅ Permissions set"
 echo ""
 
 echo "🎉 Setup selesai!"
 echo ""
 echo "📝 Next steps:"
-echo "   1. Check environment variables di Railway dashboard"
-echo "   2. Test aplikasi di URL yang diberikan Railway"
+echo "   1. Check environment variables di Render dashboard"
+echo "   2. Test aplikasi di URL yang diberikan Render"
 echo "   3. Setup email SMTP jika perlu"
+echo "   4. Setup custom domain (opsional)"
 echo ""
 

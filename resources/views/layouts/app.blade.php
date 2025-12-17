@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'LKH KUA Banjarmasin Utara')</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="{{ asset('images/logo-kua.png') }}" as="image" crossorigin>
+    
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     @stack('styles')
@@ -28,11 +32,11 @@
                 <div class="flex items-center space-x-3 px-4 py-4 border-b border-gray-200">
                     <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 flex-1">
                         @if(file_exists(public_path('images/logo-kua.png')))
-                            <img src="{{ asset('images/logo-kua.png') }}" alt="Logo KUA" class="h-12 w-auto object-contain">
+                            <img src="{{ asset('images/logo-kua.png') }}" alt="Logo KUA" class="h-12 w-auto object-contain" loading="lazy" width="48" height="48">
                         @elseif(file_exists(public_path('images/logo-kua.jpg')))
-                            <img src="{{ asset('images/logo-kua.jpg') }}" alt="Logo KUA" class="h-12 w-auto object-contain">
+                            <img src="{{ asset('images/logo-kua.jpg') }}" alt="Logo KUA" class="h-12 w-auto object-contain" loading="lazy" width="48" height="48">
                         @elseif(file_exists(public_path('images/logo-kua.svg')))
-                            <img src="{{ asset('images/logo-kua.svg') }}" alt="Logo KUA" class="h-12 w-auto object-contain">
+                            <img src="{{ asset('images/logo-kua.svg') }}" alt="Logo KUA" class="h-12 w-auto object-contain" loading="lazy" width="48" height="48">
                         @else
                             <div class="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                                 <span class="text-white font-bold text-sm">KUA</span>

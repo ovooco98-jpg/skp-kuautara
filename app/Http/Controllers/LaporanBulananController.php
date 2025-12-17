@@ -15,7 +15,10 @@ class LaporanBulananController extends Controller
      */
     public function index(Request $request)
     {
-        $query = LaporanBulanan::with(['user', 'lkh']);
+        // Optimasi: Hanya load user, tidak load semua lkh (bisa banyak)
+        // Gunakan withCount untuk total lkh jika perlu
+        $query = LaporanBulanan::with(['user:id,name,jabatan'])
+            ->withCount('lkh');
 
         // Jika bukan kepala KUA, hanya lihat laporan sendiri
         if (!Auth::user()->isKepalaKua()) {
