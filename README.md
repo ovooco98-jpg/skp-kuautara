@@ -262,7 +262,8 @@ Aplikasi ini di-deploy menggunakan **Railway** - platform yang cocok untuk Larav
 
 - **[TUTORIAL_RAILWAY.md](TUTORIAL_RAILWAY.md)** → Tutorial lengkap step-by-step deploy ke Railway (Laravel + MySQL) 🚂
   - **[railway-env-variables.json](railway-env-variables.json)** → Copy-paste ready environment variables 📋
-  - **[railway-env-variables-template.md](railway-env-variables-template.md)** → Template dengan penjelasan lengkap
+  - **[railway-env-variables-template.md](railway-env-variables-template.md)** → Template dengan penjelasan
+  - **[SETUP_CUSTOM_DOMAIN.md](SETUP_CUSTOM_DOMAIN.md)** → Setup custom domain dari Rumah Web 🌐 lengkap
 
 ---
 

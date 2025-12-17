@@ -647,11 +647,18 @@ Railway menyediakan 2 cara untuk akses terminal:
 
 ### Setup Custom Domain (Opsional)
 
-1. Di Railway Dashboard → Service → Settings
-2. Scroll ke **"Custom Domains"**
-3. Add domain: `app.yourdomain.com`
-4. Update DNS records sesuai instruksi Railway
-5. SSL akan otomatis di-generate
+**📖 Panduan lengkap:** Lihat [SETUP_CUSTOM_DOMAIN.md](SETUP_CUSTOM_DOMAIN.md) untuk step-by-step guide!
+
+**Quick steps:**
+1. Di Railway Dashboard → Service → Settings → Custom Domains
+2. Add domain: `app.yourdomain.com` (atau domain kamu)
+3. Copy DNS records dari Railway
+4. Setup DNS di Rumah Web (atau provider domain kamu):
+   - CNAME untuk subdomain → Railway domain
+   - A record untuk root domain → Railway IP
+5. Wait untuk DNS propagation (5-15 menit)
+6. Railway akan auto-generate SSL certificate
+7. Update `APP_URL` di environment variables
 
 ### Setup Monitoring
 
@@ -729,6 +736,7 @@ Aplikasi Laravel kamu sekarang sudah live di Railway! 🚂
 - [railway.json](railway.json) - Railway configuration file
 - [railway-env-variables.json](railway-env-variables.json) - **Copy-paste ready environment variables** 📋
 - [railway-env-variables-template.md](railway-env-variables-template.md) - Template dengan penjelasan lengkap
+- [SETUP_CUSTOM_DOMAIN.md](SETUP_CUSTOM_DOMAIN.md) - **Setup custom domain dari Rumah Web** 🌐
 
 ---
 
