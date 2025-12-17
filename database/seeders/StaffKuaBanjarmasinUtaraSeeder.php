@@ -100,18 +100,21 @@ class StaffKuaBanjarmasinUtaraSeeder extends Seeder
     /**
      * Tentukan role berdasarkan jabatan
      */
-    private function determineRole(string $jabatan): string
-    {
-        if (Str::contains($jabatanLower, 'kepala')) {
-            return 'kepala_kua';
-        } elseif (Str::contains($jabatanLower, 'penghulu')) {
-            return 'penghulu';
-        } elseif (Str::contains($jabatanLower, 'penyuluh')) {
-            return 'penyuluh_agama';
-        } else {
-            return 'pelaksana';
-        }
+private function determineRole(string $jabatan): string
+{
+    $jabatanLower = Str::lower($jabatan); // <- INI WAJIB ADA
+
+    if (Str::contains($jabatanLower, 'kepala')) {
+        return 'kepala_kua';
+    } elseif (Str::contains($jabatanLower, 'penghulu')) {
+        return 'penghulu';
+    } elseif (Str::contains($jabatanLower, 'penyuluh')) {
+        return 'penyuluh_agama';
     }
+
+    return 'pelaksana';
+}
+
     
     /**
      * Hapus gelar dari nama (H., Hj., Dr., Drs., S.Ag, dll)
