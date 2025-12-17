@@ -72,7 +72,10 @@ class StaffKuaBanjarmasinUtaraSeeder extends Seeder
             }
             
             // Cek apakah user dengan NIP yang sama sudah ada
-       
+        if (User::where('nip', $staff['nip'])->exists()) {
+            $this->command->warn("User dengan NIP {$staff['nip']} ({$staff['name']}) sudah ada. Dilewati.");
+            continue;
+        }
             
             // Buat user baru
             User::create([
