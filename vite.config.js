@@ -25,13 +25,13 @@ export default defineConfig({
                 },
             },
         },
-        // Minify untuk production
-        minify: 'terser',
-        terserOptions: {
-            compress: {
-                drop_console: true, // Hapus console.log di production
-            },
-        },
+        // Minify untuk production (pakai esbuild default, lebih cepat)
+        minify: 'esbuild',
+        // terserOptions: {
+        //     compress: {
+        //         drop_console: true, // Hapus console.log di production
+        //     },
+        // },
         // Chunk size warning limit
         chunkSizeWarningLimit: 1000,
     },
