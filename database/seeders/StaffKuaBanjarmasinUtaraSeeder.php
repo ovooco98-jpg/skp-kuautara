@@ -18,7 +18,7 @@ class StaffKuaBanjarmasinUtaraSeeder extends Seeder
             ['name' => 'H. BAITURRAHMAN, S.Ag', 'jabatan' => 'Kepala', 'nip' => '196907101997031007'],
             ['name' => 'JUNAIDI, S.Ag', 'jabatan' => 'Penghulu Ahli Muda', 'nip' => '197001022005011010'],
             ['name' => 'H. ABU ZAR AL GIFFARI, S.HI, M.Ag', 'jabatan' => 'Penghulu Ahli Muda', 'nip' => '198102042005011005'],
-            ['name' => 'MUHAMMAD MAHDAN, S.HI', 'jabatan' => 'Penghulu Ahli Muda', 'nip' => '197604212014112002'],
+            ['name' => 'MUHAMMAD MAHDAN, S.HI', 'jabatan' => 'Penghulu Ahli Muda', 'nip' => '197609132009011007'],
             ['name' => 'Drs. H. HAJAJI, M.Pd.I', 'jabatan' => 'Penyuluh Agama Ahli Madya', 'nip' => '196707041995031001'],
             ['name' => 'HAFSAH, S.Ag', 'jabatan' => 'Penyuluh Agama Ahli Madya', 'nip' => '196805232006042006'],
             ['name' => 'HAIRUNNISA, S.Ag', 'jabatan' => 'Penyuluh Agama Ahli Muda', 'nip' => '197612102014112001'],
