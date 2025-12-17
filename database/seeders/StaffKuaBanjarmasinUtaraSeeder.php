@@ -15,7 +15,7 @@ class StaffKuaBanjarmasinUtaraSeeder extends Seeder
     public function run(): void
     {
         $staffData = [
-            ['name' => 'H. BAITURRAHMAN, S.Ag', 'jabatan' => 'Penghulu Ahli Madya', 'nip' => '196907101997031007'],
+            ['name' => 'H. BAITURRAHMAN, S.Ag', 'jabatan' => 'Kepala', 'nip' => '196907101997031007'],
             ['name' => 'JUNAIDI, S.Ag', 'jabatan' => 'Penghulu Ahli Muda', 'nip' => '197001022005011010'],
             ['name' => 'H. ABU ZAR AL GIFFARI, S.HI, M.Ag', 'jabatan' => 'Penghulu Ahli Muda', 'nip' => '198102042005011005'],
             ['name' => 'MUHAMMAD MAHDAN, S.HI', 'jabatan' => 'Penghulu Ahli Muda', 'nip' => '197604212014112002'],
@@ -53,6 +53,7 @@ class StaffKuaBanjarmasinUtaraSeeder extends Seeder
         ];
 
         foreach ($staffData as $index => $staff) {
+            
             // Tentukan role berdasarkan jabatan atau dari data jika sudah ditentukan
             $role = $staff['role'] ?? $this->determineRole($staff['jabatan']);
             
@@ -101,14 +102,13 @@ class StaffKuaBanjarmasinUtaraSeeder extends Seeder
      */
     private function determineRole(string $jabatan): string
     {
-        $jabatanLower = Str::lower($jabatan);
-        
-        if (Str::contains($jabatanLower, 'penghulu')) {
+        if (Str::contains($jabatanLower, 'kepala')) {
+            return 'kepala_kua';
+        } elseif (Str::contains($jabatanLower, 'penghulu')) {
             return 'penghulu';
         } elseif (Str::contains($jabatanLower, 'penyuluh')) {
             return 'penyuluh_agama';
         } else {
-            // Penata Layanan, Pengolah Data, Administrasi -> pelaksana
             return 'pelaksana';
         }
     }

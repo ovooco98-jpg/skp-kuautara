@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Seed Users
-        $this->seedUsers();
+        $this->call(StaffKuaBanjarmasinUtaraSeeder::class);
         
         // Seed Kategori Kegiatan
         $this->seedKategoriKegiatan();
