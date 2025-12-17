@@ -242,42 +242,27 @@ KategoriKegiatan::create([
 
 ## 🌐 Deployment (Production Ready!)
 
-Aplikasi ini bisa di-deploy ke berbagai platform. **Rekomendasi untuk Free Tier: Render** atau **Fly.io**.
+Aplikasi ini di-deploy menggunakan **Railway** - platform yang cocok untuk Laravel dengan MySQL di satu tempat.
 
-### Platform Options
+### 🚂 Deploy ke Railway
 
-| Platform | Rating | Notes |
-|----------|--------|-------|
-| **Render** | ⭐⭐⭐⭐⭐ | 750 jam/bulan gratis, PostgreSQL gratis 90 hari, auto-deploy |
-| **Fly.io** | ⭐⭐⭐⭐⭐ | 3 VMs gratis, PostgreSQL gratis 3GB, global edge network |
-| **Railway** | ⭐⭐⭐⭐ | Laravel + MySQL di satu platform, free tier terbatas |
-| **Vercel** | ⚠️ | Tidak ideal untuk Laravel (butuh banyak penyesuaian) - [Setup Guide](SETUP_VERCEL.md) |
-
-### Quick Deploy ke Render (Free Tier)
-
-**📖 Panduan lengkap:** Lihat [SETUP_RENDER.md](SETUP_RENDER.md) untuk step-by-step guide!
+**📖 Panduan lengkap:** Lihat [TUTORIAL_RAILWAY.md](TUTORIAL_RAILWAY.md) untuk step-by-step guide!
 
 **Quick steps:**
 1. Push code ke GitHub
-2. Daftar di [render.com](https://render.com)
-3. New → Web Service → pilih repository
-4. Render akan auto-detect `render.yaml`
-5. **Setup Database:**
-   - **Opsi A (Recommended)**: Setup MySQL dengan [PlanetScale](https://planetscale.com) (gratis permanen) ⭐
-   - **Opsi B**: Tambahkan PostgreSQL di Render (gratis 90 hari)
-6. Setup environment variables (lihat SETUP_RENDER.md)
-7. Generate APP_KEY via Render Shell
-8. Run migrations: `php artisan migrate --force`
-9. Seed data: `php artisan db:seed --class=StaffKuaBanjarmasinUtaraSeeder`
+2. Daftar di [railway.app](https://railway.app)
+3. New Project → Deploy from GitHub repo
+4. Add MySQL Database (di platform yang sama)
+5. Setup environment variables (lihat [railway-env-variables.json](railway-env-variables.json))
+6. Generate APP_KEY via Railway Shell
+7. Run migrations: `php artisan migrate --force`
+8. Seed data: `php artisan db:seed --class=StaffKuaBanjarmasinUtaraSeeder`
 
 ### 📚 Deployment Guides
 
-- **[TUTORIAL_RENDER.md](TUTORIAL_RENDER.md)** → Tutorial lengkap step-by-step deploy ke Render (Recommended! ⭐) 📚
-- **[SETUP_RENDER.md](SETUP_RENDER.md)** → Quick reference setup Render 🚀
-- **[SETUP_PLANETSCALE.md](SETUP_PLANETSCALE.md)** → Setup MySQL gratis dengan PlanetScale ⭐
-- **[HOSTING_ALTERNATIVES.md](HOSTING_ALTERNATIVES.md)** → Semua alternatif hosting gratis
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** → Panduan deployment detail
-- **[SETUP_VERCEL.md](SETUP_VERCEL.md)** → Setup paksa ke Vercel (not recommended, tapi kalau mau coba) ⚠️
+- **[TUTORIAL_RAILWAY.md](TUTORIAL_RAILWAY.md)** → Tutorial lengkap step-by-step deploy ke Railway (Laravel + MySQL) 🚂
+  - **[railway-env-variables.json](railway-env-variables.json)** → Copy-paste ready environment variables 📋
+  - **[railway-env-variables-template.md](railway-env-variables-template.md)** → Template dengan penjelasan lengkap
 
 ---
 

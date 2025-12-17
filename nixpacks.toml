@@ -1,11 +1,14 @@
 [phases.setup]
-nixPkgs = ["nodejs-20_x", "php82", "composer"]
+nixPkgs = ["php82", "nodejs-20_x"]
 
 [phases.install]
 cmds = [
   "composer install --optimize-autoloader --no-dev",
   "npm ci",
-  "npm run build"
+  "npm run build",
+  "php artisan config:cache",
+  "php artisan route:cache",
+  "php artisan view:cache"
 ]
 
 [start]
