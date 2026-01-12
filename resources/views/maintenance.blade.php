@@ -106,26 +106,33 @@
 
     <!-- Auto Refresh Script -->
     <script>
-        // Auto refresh setiap 5 menit untuk cek apakah maintenance sudah selesai
+        // Auto refresh setiap 30 menit untuk cek apakah maintenance sudah selesai
         setTimeout(function() {
             location.reload();
-        }, 300000); // 5 menit
+        }, 1800000); // 30 menit
 
-        // Countdown timer
-        let timeLeft = 1800; // 30 menit dalam detik
+        // Countdown timer - 1 hari
+        let timeLeft = 86400; // 1 hari dalam detik (24 * 60 * 60)
         const timerElement = document.querySelector('.text-3xl.font-bold');
         
         setInterval(() => {
             if (timeLeft > 0) {
-                timeLeft--;
-                const minutes = Math.floor(timeLeft / 60);
-                const seconds = timeLeft % 60;
+                timeLeft -= 3600; // Kurangi 1 jam setiap interval
+                const hours = Math.floor(timeLeft / 3600);
+                const minutes = Math.floor((timeLeft % 3600) / 60);
+                
                 // Update hanya jika elemen ada
-                if (timerElement && minutes >= 0) {
-                    timerElement.textContent = `~${minutes} Menit`;
+                if (timerElement && hours >= 0) {
+                    if (hours > 0) {
+                        timerElement.textContent = `~${hours} Jam`;
+                    } else if (minutes > 0) {
+                        timerElement.textContent = `~${minutes} Menit`;
+                    } else {
+                        timerElement.textContent = `Segera Selesai`;
+                    }
                 }
             }
-        }, 60000); // Update setiap 1 menit
+        }, 3600000); // Update setiap 1 jam
     </script>
 </body>
 </html>
