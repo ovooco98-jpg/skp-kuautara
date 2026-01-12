@@ -271,13 +271,13 @@
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
                                             <input type="time" name="waktu_mulai" id="edit-waktu_mulai" required
-                                                   value="${lkh.waktu_mulai || ''}"
+                                                   value="${lkh.waktu_mulai ? (typeof lkh.waktu_mulai === 'string' ? lkh.waktu_mulai.substring(0, 5) : lkh.waktu_mulai) : ''}"
                                                    placeholder="Mulai"
                                                    class="w-full text-xs px-2.5 py-1.5 rounded border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                         </div>
                                         <div>
                                             <input type="time" name="waktu_selesai" id="edit-waktu_selesai" required
-                                                   value="${lkh.waktu_selesai || ''}"
+                                                   value="${lkh.waktu_selesai ? (typeof lkh.waktu_selesai === 'string' ? lkh.waktu_selesai.substring(0, 5) : lkh.waktu_selesai) : ''}"
                                                    placeholder="Selesai"
                                                    class="w-full text-xs px-2.5 py-1.5 rounded border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                         </div>
@@ -299,10 +299,11 @@
                                     <p class="mt-0.5 text-[10px] text-gray-500">Ketik untuk saran kategori otomatis</p>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Lampiran</label>
-                                    <input type="file" name="lampiran" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Lampiran (Link Drive)</label>
+                                    <input type="url" name="lampiran" id="edit-lampiran" value="${lkh.lampiran || ''}"
+                                           placeholder="https://drive.google.com/..."
                                            class="w-full text-xs px-2.5 py-1.5 rounded border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                                    <p class="mt-0.5 text-[10px] text-gray-500">Kosongkan jika tidak ingin mengubah</p>
+                                    <p class="mt-0.5 text-[10px] text-gray-500">Link Google Drive atau Dropbox</p>
                                 </div>
                             </div>
                             <div class="space-y-3">
@@ -497,10 +498,12 @@
                                     <p class="mt-0.5 text-[10px] text-gray-500">Ketik untuk saran kategori otomatis</p>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Lampiran</label>
-                                    <input type="file" name="lampiran" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Lampiran (Link Drive)</label>
+                                    <input type="url" name="lampiran" id="create-lampiran-show"
+                                           placeholder="https://drive.google.com/..."
+                                           value="${sourceLkh ? (sourceLkh.lampiran || '') : ''}"
                                            class="w-full text-xs px-2.5 py-1.5 rounded border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                                    <p class="mt-0.5 text-[10px] text-gray-500">PDF, DOC, JPG, PNG (Max: 2MB)</p>
+                                    <p class="mt-0.5 text-[10px] text-gray-500">Link Google Drive atau Dropbox (opsional)</p>
                                 </div>
                             </div>
                             <div class="space-y-3">
@@ -532,7 +535,7 @@
                             </button>
                             <button type="submit" id="create-submit-btn-show"
                                     class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-                                Simpan sebagai Draft
+                                Simpan LKH
                             </button>
                         </div>
                     </form>
@@ -584,14 +587,14 @@
                             } else {
                                 alert('Error: ' + (data.message || 'Gagal menyimpan LKH'));
                                 submitBtn.disabled = false;
-                                submitBtn.textContent = 'Simpan sebagai Draft';
+                                submitBtn.textContent = 'Simpan LKH';
                             }
                         })
                         .catch(error => {
                             console.error('Error:', error);
                             alert('Terjadi kesalahan saat menyimpan LKH');
                             submitBtn.disabled = false;
-                            submitBtn.textContent = 'Simpan sebagai Draft';
+                            submitBtn.textContent = 'Simpan LKH';
                         });
                     });
                 }

@@ -374,6 +374,22 @@ class LkhController extends Controller
 
         // Jika request AJAX atau expects JSON, return JSON
         if (request()->wantsJson() || request()->ajax()) {
+            // Format waktu ke H:i untuk input type="time"
+            $waktuMulai = $lkh->waktu_mulai;
+            $waktuSelesai = $lkh->waktu_selesai;
+            
+            if ($waktuMulai instanceof \Carbon\Carbon || $waktuMulai instanceof \DateTime) {
+                $waktuMulai = $waktuMulai->format('H:i');
+            } elseif (is_string($waktuMulai) && strlen($waktuMulai) > 5) {
+                $waktuMulai = substr($waktuMulai, 0, 5);
+            }
+            
+            if ($waktuSelesai instanceof \Carbon\Carbon || $waktuSelesai instanceof \DateTime) {
+                $waktuSelesai = $waktuSelesai->format('H:i');
+            } elseif (is_string($waktuSelesai) && strlen($waktuSelesai) > 5) {
+                $waktuSelesai = substr($waktuSelesai, 0, 5);
+            }
+            
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -381,8 +397,8 @@ class LkhController extends Controller
                     'tanggal' => $lkh->tanggal->format('Y-m-d'),
                     'kategori_kegiatan_id' => $lkh->kategori_kegiatan_id,
                     'uraian_kegiatan' => $lkh->uraian_kegiatan,
-                    'waktu_mulai' => $lkh->waktu_mulai,
-                    'waktu_selesai' => $lkh->waktu_selesai,
+                    'waktu_mulai' => $waktuMulai,
+                    'waktu_selesai' => $waktuSelesai,
                     'hasil_output' => $lkh->hasil_output,
                     'kendala' => $lkh->kendala,
                     'tindak_lanjut' => $lkh->tindak_lanjut,
