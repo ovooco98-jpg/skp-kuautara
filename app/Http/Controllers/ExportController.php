@@ -17,7 +17,13 @@ class ExportController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        $query = Lkh::with(['user', 'kategoriKegiatan']);
+        // Optimasi: Select only needed columns + eager load dengan select spesifik
+        $query = Lkh::select('id', 'user_id', 'kategori_kegiatan_id', 'tanggal', 'uraian_kegiatan', 
+                             'waktu_mulai', 'waktu_selesai', 'hasil_output', 'kendala', 'tindak_lanjut', 'status')
+            ->with([
+                'user:id,name,nip,jabatan',
+                'kategoriKegiatan:id,nama'
+            ]);
 
         // Jika bukan kepala KUA, hanya export LKH miliknya sendiri
         if (!Auth::user()->isKepalaKua()) {
@@ -51,9 +57,10 @@ class ExportController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        $lkh = $query->orderBy('tanggal', 'desc')
-                     ->orderBy('waktu_mulai', 'asc')
-                     ->get();
+        // Optimasi: Tambah limit untuk menghindari memory overflow (max 10000 records)
+        $query->orderBy('tanggal', 'desc')
+              ->orderBy('waktu_mulai', 'asc')
+              ->limit(10000);
 
         // Generate CSV/Excel content
         $filename = 'LKH_' . date('Y-m-d_His') . '.csv';
@@ -62,7 +69,15 @@ class ExportController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $callback = function() use ($lkh) {
+        // Optimasi: Cache Kepala KUA query di luar callback
+        $kepalaKua = \Cache::remember('kepala_kua_data', 3600, function () {
+            return User::where('role', 'kepala_kua')->where('is_active', true)
+                ->select('name', 'nip')->first();
+        });
+        $namaKepalaKua = $kepalaKua ? $kepalaKua->name : '-';
+        $nipKepalaKua = $kepalaKua ? ($kepalaKua->nip ?? '-') : '-';
+
+        $callback = function() use ($query, $namaKepalaKua, $nipKepalaKua) {
             $file = fopen('php://output', 'w');
             
             // Add BOM for UTF-8
@@ -89,14 +104,9 @@ class ExportController extends Controller
                 'NIP Kepala KUA'
             ]);
 
-            // Ambil data Kepala KUA
-            $kepalaKua = User::where('role', 'kepala_kua')->where('is_active', true)->first();
-            $namaKepalaKua = $kepalaKua ? $kepalaKua->name : '-';
-            $nipKepalaKua = $kepalaKua ? ($kepalaKua->nip ?? '-') : '-';
-
-            // Data
+            // Data - Gunakan lazy() untuk memory efficient streaming
             $no = 1;
-            foreach ($lkh as $item) {
+            foreach ($query->lazy(500) as $item) {
                 fputcsv($file, [
                     $no++,
                     $item->tanggal->format('d/m/Y'),
@@ -132,12 +142,18 @@ class ExportController extends Controller
         $bulan = $request->input('bulan', date('m'));
         $tahun = $request->input('tahun', date('Y'));
 
-        $lkh = Lkh::with(['user', 'kategoriKegiatan'])
+        // Optimasi: Select spesifik kolom + limit + eager load efisien
+        $query = Lkh::select('id', 'user_id', 'kategori_kegiatan_id', 'tanggal', 
+                             'uraian_kegiatan', 'waktu_mulai', 'waktu_selesai', 'status')
+            ->with([
+                'user:id,name,nip,jabatan',
+                'kategoriKegiatan:id,nama'
+            ])
             ->whereYear('tanggal', $tahun)
             ->whereMonth('tanggal', $bulan)
             ->orderBy('user_id')
             ->orderBy('tanggal')
-            ->get();
+            ->limit(5000);
 
         $filename = 'Laporan_LKH_' . Carbon::create($tahun, $bulan, 1)->format('F_Y') . '.csv';
         $headers = [
@@ -145,7 +161,13 @@ class ExportController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $callback = function() use ($lkh, $bulan, $tahun) {
+        // Cache Kepala KUA data
+        $kepalaKua = \Cache::remember('kepala_kua_data', 3600, function () {
+            return User::where('role', 'kepala_kua')->where('is_active', true)
+                ->select('name', 'nip')->first();
+        });
+
+        $callback = function() use ($query, $bulan, $tahun, $kepalaKua) {
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
             
@@ -155,8 +177,8 @@ class ExportController extends Controller
             fputcsv($file, ['Periode: ' . Carbon::create($tahun, $bulan, 1)->locale('id')->translatedFormat('F Y')]);
             fputcsv($file, []);
 
-            // Group by user
-            $grouped = $lkh->groupBy('user_id');
+            // Group by user - gunakan collect untuk lazy loading
+            $grouped = $query->get()->groupBy('user_id');
             
             foreach ($grouped as $userId => $userLkh) {
                 $user = $userLkh->first()->user;
@@ -199,21 +221,26 @@ class ExportController extends Controller
             fputcsv($file, []);
             fputcsv($file, ['RINGKASAN']);
             fputcsv($file, ['Total Pegawai: ' . $grouped->count()]);
-            fputcsv($file, ['Total LKH: ' . $lkh->count()]);
             
+            // Hitung total dengan cara yang lebih efisien
+            $totalLkh = 0;
             $totalDurasi = 0;
-            foreach ($lkh as $item) {
-                try {
-                    $totalDurasi += $item->durasi;
-                } catch (\Exception $e) {
-                    // Skip jika error
+            foreach ($grouped as $userLkh) {
+                $totalLkh += $userLkh->count();
+                foreach ($userLkh as $item) {
+                    try {
+                        $totalDurasi += $item->durasi;
+                    } catch (\Exception $e) {
+                        // Skip jika error
+                    }
                 }
             }
+            
+            fputcsv($file, ['Total LKH: ' . $totalLkh]);
             fputcsv($file, ['Total Durasi: ' . number_format($totalDurasi, 2) . ' jam']);
             fputcsv($file, []);
 
-            // Tanda Tangan Kepala KUA
-            $kepalaKua = User::where('role', 'kepala_kua')->where('is_active', true)->first();
+            // Tanda Tangan Kepala KUA (sudah di-cache)
             if ($kepalaKua) {
                 fputcsv($file, []);
                 fputcsv($file, ['Mengetahui,']);
@@ -236,7 +263,16 @@ class ExportController extends Controller
      */
     public function exportLaporanTriwulanan($id)
     {
-        $laporan = \App\Models\LaporanTriwulanan::with(['user', 'laporanBulanan.lkh.kategoriKegiatan'])
+        // Optimasi: Batasi eager loading depth dan select spesifik
+        $laporan = \App\Models\LaporanTriwulanan::select('id', 'user_id', 'tahun', 'triwulan', 
+                'ringkasan_kegiatan', 'pencapaian', 'kendala', 'rencana_triwulan_depan', 'status')
+            ->with([
+                'user:id,name,nip,jabatan',
+                'laporanBulanan' => function($q) {
+                    $q->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan')
+                      ->withCount('lkh'); // Hanya count, jangan load semua
+                }
+            ])
             ->findOrFail($id);
 
         // Cek akses
@@ -257,7 +293,19 @@ class ExportController extends Controller
      */
     public function exportLaporanTahunan($id)
     {
-        $laporan = \App\Models\LaporanTahunan::with(['user', 'laporanTriwulanan.laporanBulanan.lkh.kategoriKegiatan'])
+        // Optimasi: Batasi eager loading maksimal 2 level untuk menghindari memory overflow
+        $laporan = \App\Models\LaporanTahunan::select('id', 'user_id', 'tahun', 
+                'ringkasan_kegiatan', 'pencapaian', 'kendala', 'rencana_tahun_depan', 'status')
+            ->with([
+                'user:id,name,nip,jabatan',
+                'laporanTriwulanan' => function($q) {
+                    $q->select('id', 'user_id', 'tahun', 'triwulan', 'nama_triwulan')
+                      ->with(['laporanBulanan' => function($q2) {
+                          $q2->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan')
+                             ->withCount('lkh');
+                      }]);
+                }
+            ])
             ->findOrFail($id);
 
         // Cek akses
@@ -299,12 +347,20 @@ class ExportController extends Controller
                 abort(403, 'Anda tidak berhak mengakses laporan ini');
             }
 
-            $lkh = Lkh::with(['user', 'kategoriKegiatan'])
+            // Optimasi: Select spesifik + limit untuk print
+            $lkh = Lkh::select('id', 'user_id', 'kategori_kegiatan_id', 'tanggal', 
+                              'uraian_kegiatan', 'waktu_mulai', 'waktu_selesai', 
+                              'hasil_output', 'status')
+                ->with([
+                    'user:id,name,nip,jabatan',
+                    'kategoriKegiatan:id,nama'
+                ])
                 ->where('user_id', $userId)
                 ->whereYear('tanggal', $tahun)
                 ->whereMonth('tanggal', $bulan)
                 ->orderBy('tanggal', 'asc')
                 ->orderBy('waktu_mulai', 'asc')
+                ->limit(1000)
                 ->get();
 
             if ($lkh->isEmpty()) {
@@ -324,7 +380,17 @@ class ExportController extends Controller
      */
     public function printLaporanBulanan($id)
     {
-        $laporan = \App\Models\LaporanBulanan::with(['user', 'lkh.kategoriKegiatan', 'skp'])->findOrFail($id);
+        // Optimasi: Select spesifik dan batasi data yang di-load
+        $laporan = \App\Models\LaporanBulanan::with([
+            'user:id,name,nip,jabatan',
+            'lkh' => function($q) {
+                $q->select('id', 'kategori_kegiatan_id', 'tanggal', 'uraian_kegiatan', 
+                          'waktu_mulai', 'waktu_selesai', 'kendala')
+                  ->with('kategoriKegiatan:id,nama')
+                  ->limit(500); // Batasi LKH yang di-load
+            },
+            'skp:id,user_id,target_kuantitas,target_waktu'
+        ])->findOrFail($id);
 
         // Cek akses
         if (!Auth::user()->isKepalaKua() && $laporan->user_id !== Auth::id()) {
@@ -377,7 +443,14 @@ class ExportController extends Controller
      */
     public function printLaporanTriwulanan($id)
     {
-        $laporan = \App\Models\LaporanTriwulanan::with(['user', 'laporanBulanan.lkh.kategoriKegiatan'])->findOrFail($id);
+        // Optimasi: Batasi eager loading dan select spesifik
+        $laporan = \App\Models\LaporanTriwulanan::with([
+            'user:id,name,nip,jabatan',
+            'laporanBulanan' => function($q) {
+                $q->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan', 'total_lkh', 'total_durasi')
+                  ->withCount('lkh'); // Hanya count untuk statistik
+            }
+        ])->findOrFail($id);
 
         // Cek akses
         if (!Auth::user()->isKepalaKua() && $laporan->user_id !== Auth::id()) {
@@ -404,7 +477,17 @@ class ExportController extends Controller
      */
     public function printLaporanTahunan($id)
     {
-        $laporan = \App\Models\LaporanTahunan::with(['user', 'laporanTriwulanan.laporanBulanan.lkh.kategoriKegiatan'])->findOrFail($id);
+        // Optimasi KRITIKAL: Hindari 4-level deep eager loading! Gunakan max 2 level
+        $laporan = \App\Models\LaporanTahunan::with([
+            'user:id,name,nip,jabatan',
+            'laporanTriwulanan' => function($q) {
+                $q->select('id', 'user_id', 'tahun', 'triwulan', 'nama_triwulan')
+                  ->with(['laporanBulanan' => function($q2) {
+                      $q2->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan', 'total_lkh', 'total_durasi')
+                         ->withCount('lkh');
+                  }]);
+            }
+        ])->findOrFail($id);
 
         // Cek akses
         if (!Auth::user()->isKepalaKua() && $laporan->user_id !== Auth::id()) {

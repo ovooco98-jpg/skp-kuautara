@@ -16,7 +16,9 @@ class LaporanTriwulananController extends Controller
      */
     public function index(Request $request)
     {
-        $query = LaporanTriwulanan::with(['user', 'laporanBulanan']);
+        // Optimasi: Gunakan withCount untuk menghindari load semua relations
+        $query = LaporanTriwulanan::with(['user:id,name,nip,jabatan'])
+            ->withCount('laporanBulanan');
 
         // Jika bukan kepala KUA, hanya lihat laporan sendiri
         if (!Auth::user()->isKepalaKua()) {
@@ -76,13 +78,19 @@ class LaporanTriwulananController extends Controller
         $bulanSelesai = $triwulan * 3;
         
         if (Auth::user()->isKepalaKua()) {
+            // Optimasi: Batasi eager load, gunakan aggregate dari laporan_bulanan table
             $laporanBulanan = LaporanBulanan::where('tahun', $tahun)
                 ->whereBetween('bulan', [$bulanMulai, $bulanSelesai])
                 ->whereHas('user', function($q) {
                     $q->where('role', '!=', 'kepala_kua')
                       ->orWhere('id', Auth::id());
                 })
-                ->with(['lkh.kategoriKegiatan', 'user:id,name,jabatan'])
+                ->with([
+                    'user:id,name,jabatan',
+                    // Hindari eager load semua lkh, gunakan count dan aggregate saja
+                ])
+                ->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan', 'total_lkh', 'total_durasi')
+                ->withCount('lkh')
                 ->orderBy('user_id', 'asc')
                 ->orderBy('bulan', 'asc')
                 ->get();
@@ -90,7 +98,8 @@ class LaporanTriwulananController extends Controller
             $laporanBulanan = LaporanBulanan::byUser(Auth::id())
                 ->where('tahun', $tahun)
                 ->whereBetween('bulan', [$bulanMulai, $bulanSelesai])
-                ->with('lkh.kategoriKegiatan')
+                ->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan', 'total_lkh', 'total_durasi')
+                ->withCount('lkh')
                 ->orderBy('bulan', 'asc')
                 ->get();
         }
@@ -194,8 +203,14 @@ class LaporanTriwulananController extends Controller
      */
     public function show(string $id)
     {
-        $laporan = LaporanTriwulanan::with(['user', 'laporanBulanan.lkh.kategoriKegiatan'])
-            ->findOrFail($id);
+        // Optimasi: Batasi eager loading depth (max 2 level)
+        $laporan = LaporanTriwulanan::with([
+            'user:id,name,nip,jabatan',
+            'laporanBulanan' => function($q) {
+                $q->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan', 'total_lkh', 'total_durasi')
+                  ->withCount('lkh'); // Hanya count untuk performa
+            }
+        ])->findOrFail($id);
 
         // Cek akses
         if (!Auth::user()->isKepalaKua() && $laporan->user_id !== Auth::id()) {
@@ -290,12 +305,10 @@ class LaporanTriwulananController extends Controller
     private function generateRingkasan($laporanBulanan)
     {
         $totalLaporanBulanan = $laporanBulanan->count();
-        $totalLkh = $laporanBulanan->sum(function($laporan) {
-            return $laporan->lkh->count();
-        });
-        $totalDurasi = $laporanBulanan->sum(function($laporan) {
-            return $laporan->lkh->sum('durasi');
-        });
+        
+        // Optimasi: Gunakan aggregate data yang sudah ada di laporan_bulanan table
+        $totalLkh = $laporanBulanan->sum('total_lkh');
+        $totalDurasi = $laporanBulanan->sum('total_durasi');
         
         $bulanList = $laporanBulanan->map(function($laporan) {
             return $laporan->nama_bulan;
@@ -313,28 +326,32 @@ class LaporanTriwulananController extends Controller
      */
     private function generatePencapaian($laporanBulanan)
     {
-        // Kumpulkan semua LKH dari semua laporan bulanan
-        $allLkh = collect();
-        foreach ($laporanBulanan as $laporan) {
-            $allLkh = $allLkh->merge($laporan->lkh);
+        // Optimasi: Gunakan aggregate data yang sudah ada
+        $totalLkh = $laporanBulanan->sum('total_lkh');
+        $totalDurasi = $laporanBulanan->sum('total_durasi');
+        
+        // Optimasi: Query database langsung untuk kategori stats daripada load semua LKH
+        $laporanBulananIds = $laporanBulanan->pluck('id');
+        
+        $kategoriStats = collect();
+        if ($laporanBulananIds->isNotEmpty()) {
+            $kategoriStats = \DB::table('lkh')
+                ->join('laporan_bulanan_lkh', 'lkh.id', '=', 'laporan_bulanan_lkh.lkh_id')
+                ->join('kategori_kegiatan', 'lkh.kategori_kegiatan_id', '=', 'kategori_kegiatan.id')
+                ->whereIn('laporan_bulanan_lkh.laporan_bulanan_id', $laporanBulananIds)
+                ->select(
+                    'kategori_kegiatan.nama',
+                    \DB::raw('COUNT(*) as jumlah'),
+                    \DB::raw('SUM(CASE 
+                        WHEN TIME(lkh.waktu_selesai) > TIME(lkh.waktu_mulai) 
+                        THEN TIME_TO_SEC(TIMEDIFF(lkh.waktu_selesai, lkh.waktu_mulai)) / 3600 
+                        ELSE 0 END) as durasi')
+                )
+                ->groupBy('kategori_kegiatan.id', 'kategori_kegiatan.nama')
+                ->orderByDesc('jumlah')
+                ->limit(5)
+                ->get();
         }
-        
-        $totalLkh = $allLkh->count();
-        $totalDurasi = $allLkh->sum('durasi');
-        
-        // Ambil kategori kegiatan dari semua LKH
-        $kategoriStats = $allLkh->filter(function($lkh) {
-            return $lkh->kategoriKegiatan !== null;
-        })->groupBy('kategori_kegiatan_id')
-          ->map(function ($items) {
-              return [
-                  'nama' => $items->first()->kategoriKegiatan->nama ?? 'Lainnya',
-                  'jumlah' => $items->count(),
-                  'durasi' => $items->sum('durasi')
-              ];
-          })
-          ->sortByDesc('jumlah')
-          ->take(5);
         
         $pencapaian = "Pencapaian utama triwulan ini:\n";
         $pencapaian .= "- Total kegiatan harian: {$totalLkh} LKH\n";
@@ -356,20 +373,7 @@ class LaporanTriwulananController extends Controller
      */
     private function generateKendala($laporanBulanan)
     {
-        // Kumpulkan kendala dari LKH yang ada kendala
-        $kendalaLkh = collect();
-        foreach ($laporanBulanan as $laporan) {
-            foreach ($laporan->lkh as $lkh) {
-                if (!empty($lkh->kendala)) {
-                    $kendalaLkh->push([
-                        'tanggal' => $lkh->tanggal->format('d/m/Y'),
-                        'kendala' => $lkh->kendala
-                    ]);
-                }
-            }
-        }
-
-        // Kumpulkan kendala dari laporan bulanan
+        // Optimasi: Ambil kendala dari laporan bulanan saja (sudah teragregasi)
         $kendalaLaporanBulanan = $laporanBulanan->filter(function($laporan) {
             return !empty($laporan->kendala);
         })->map(function($laporan) {
@@ -383,19 +387,8 @@ class LaporanTriwulananController extends Controller
         
         if ($kendalaLaporanBulanan->isNotEmpty()) {
             $kendala .= "Kendala yang dihadapi selama triwulan ini:\n\n";
-            
             foreach ($kendalaLaporanBulanan as $item) {
                 $kendala .= "• {$item['bulan']}: {$item['kendala']}\n";
-            }
-        }
-
-        if ($kendalaLkh->isNotEmpty() && $kendalaLkh->count() <= 10) {
-            if (!empty($kendala)) {
-                $kendala .= "\n";
-            }
-            $kendala .= "Kendala spesifik dari kegiatan harian:\n\n";
-            foreach ($kendalaLkh->take(5) as $item) {
-                $kendala .= "• {$item['tanggal']}: {$item['kendala']}\n";
             }
         }
 
@@ -411,7 +404,7 @@ class LaporanTriwulananController extends Controller
      */
     private function generateRencana($laporanBulanan, $triwulan)
     {
-        // Ambil rencana dari laporan bulanan
+        // Optimasi: Ambil rencana dari laporan bulanan (sudah teragregasi)
         $rencanaLaporanBulanan = $laporanBulanan->filter(function($laporan) {
             return !empty($laporan->rencana_bulan_depan);
         })->map(function($laporan) {
@@ -421,29 +414,29 @@ class LaporanTriwulananController extends Controller
             ];
         });
 
-        // Tentukan triwulan berikutnya
         $triwulanBerikutnya = $triwulan + 1;
         if ($triwulanBerikutnya > 4) {
             $triwulanBerikutnya = 1;
         }
 
-        // Kumpulkan kategori kegiatan yang sering dilakukan
-        $allLkh = collect();
-        foreach ($laporanBulanan as $laporan) {
-            $allLkh = $allLkh->merge($laporan->lkh);
+        // Optimasi: Query database untuk top kategori
+        $laporanBulananIds = $laporanBulanan->pluck('id');
+        
+        $kategoriFavorit = collect();
+        if ($laporanBulananIds->isNotEmpty()) {
+            $kategoriFavorit = \DB::table('lkh')
+                ->join('laporan_bulanan_lkh', 'lkh.id', '=', 'laporan_bulanan_lkh.lkh_id')
+                ->join('kategori_kegiatan', 'lkh.kategori_kegiatan_id', '=', 'kategori_kegiatan.id')
+                ->whereIn('laporan_bulanan_lkh.laporan_bulanan_id', $laporanBulananIds)
+                ->select(
+                    'kategori_kegiatan.nama',
+                    \DB::raw('COUNT(*) as jumlah')
+                )
+                ->groupBy('kategori_kegiatan.id', 'kategori_kegiatan.nama')
+                ->orderByDesc('jumlah')
+                ->limit(3)
+                ->get();
         }
-
-        $kategoriFavorit = $allLkh->filter(function($lkh) {
-            return $lkh->kategoriKegiatan !== null;
-        })->groupBy('kategori_kegiatan_id')
-          ->map(function ($items) {
-              return [
-                  'nama' => $items->first()->kategoriKegiatan->nama ?? 'Lainnya',
-                  'jumlah' => $items->count()
-              ];
-          })
-          ->sortByDesc('jumlah')
-          ->take(3);
 
         $rencana = "Rencana kegiatan untuk Triwulan {$triwulanBerikutnya}:\n\n";
 

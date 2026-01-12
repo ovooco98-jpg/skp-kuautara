@@ -92,8 +92,8 @@ class LkhController extends Controller
             ]);
         }
 
-        // Ambil list users untuk filter - cache untuk performa
-        $users = Cache::remember('users_filter_list', 3600, function () {
+        // Ambil list users untuk filter - cache lebih lama untuk performa (rarely changes)
+        $users = Cache::remember('users_filter_list', 86400, function () {
             return User::aktif()
                 ->where('role', '!=', 'kepala_kua')
                 ->orderBy('name')
@@ -164,9 +164,11 @@ class LkhController extends Controller
      */
     public function create(Request $request)
     {
-        // Ambil kategori kegiatan berdasarkan role user
-        $kategoriKegiatan = KategoriKegiatan::aktif()
+        // Optimasi: Select spesifik kolom + limit untuk kategori
+        $kategoriKegiatan = KategoriKegiatan::select('id', 'nama')
+            ->aktif()
             ->byRole(Auth::user()->role)
+            ->limit(100) // Batasi maksimal 100 kategori
             ->get();
 
         // Handle copy from LKH

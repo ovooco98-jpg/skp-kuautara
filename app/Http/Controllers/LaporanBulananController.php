@@ -83,21 +83,30 @@ class LaporanBulananController extends Controller
         // Jika Kepala KUA, ambil LKH dari semua staff + LKH sendiri
         // Jika bukan Kepala KUA, hanya ambil LKH sendiri
         if (Auth::user()->isKepalaKua()) {
-            // Ambil LKH dari semua staff (bukan kepala_kua) + LKH sendiri
-            $lkh = Lkh::byBulanTahun($bulan, $tahun)
+            // Optimasi: Select spesifik kolom + limit untuk menghindari memory overflow
+            $lkh = Lkh::select('id', 'user_id', 'kategori_kegiatan_id', 'tanggal', 
+                              'uraian_kegiatan', 'waktu_mulai', 'waktu_selesai', 'kendala')
+                ->byBulanTahun($bulan, $tahun)
                 ->whereHas('user', function($q) {
                     $q->where('role', '!=', 'kepala_kua')
                       ->orWhere('id', Auth::id());
                 })
-                ->with(['kategoriKegiatan', 'user:id,name,jabatan'])
+                ->with([
+                    'kategoriKegiatan:id,nama', 
+                    'user:id,name,jabatan'
+                ])
                 ->orderBy('user_id', 'asc')
                 ->orderBy('tanggal', 'asc')
+                ->limit(1000) // Batasi maksimal 1000 LKH per bulan
                 ->get();
         } else {
-            $lkh = Lkh::byUser(Auth::id())
+            $lkh = Lkh::select('id', 'user_id', 'kategori_kegiatan_id', 'tanggal', 
+                              'uraian_kegiatan', 'waktu_mulai', 'waktu_selesai', 'kendala')
+                ->byUser(Auth::id())
                 ->byBulanTahun($bulan, $tahun)
-                ->with('kategoriKegiatan')
+                ->with('kategoriKegiatan:id,nama')
                 ->orderBy('tanggal', 'asc')
+                ->limit(500) // Batasi maksimal 500 LKH per bulan
                 ->get();
         }
 
@@ -119,13 +128,13 @@ class LaporanBulananController extends Controller
         $rencanaOtomatis = $this->generateRencana($lkh, $bulan);
 
         // Ambil target dari SKP jika ada
-        $targetLkhOtomatis = null;
-        $targetDurasiOtomatis = null;
-        $skp = \App\Models\Skp::where('user_id', Auth::id())
-            ->where('tahun', $tahun)
-            ->first();
-        
-        if ($skp) {
+        // Optimasi: Cache SKP query
+        $skp = \Cache::remember('skp_user_' . Auth::id() . '_' . $tahun, 3600, function() use ($tahun) {
+            return \App\Models\Skp::where('user_id', Auth::id())
+                ->where('tahun', $tahun)
+                ->select('id', 'user_id', 'tahun', 'target_kuantitas', 'target_waktu')
+                ->first();
+        });
             if ($skp->target_kuantitas) {
                 $targetLkhOtomatis = $skp->target_kuantitas;
             }
@@ -213,11 +222,14 @@ class LaporanBulananController extends Controller
         $targetLkh = $validated['target_lkh'] ?? null;
         $targetDurasi = $validated['target_durasi'] ?? null;
         
-        // Jika target tidak diinput, coba ambil dari SKP yang terkait
+        // Optimasi: Jika target tidak diinput, coba ambil dari SKP yang terkait (dengan cache)
         if (!$targetLkh || !$targetDurasi) {
-            $skp = \App\Models\Skp::where('user_id', Auth::id())
-                ->where('tahun', $validated['tahun'])
-                ->first();
+            $skp = \Cache::remember('skp_user_' . Auth::id() . '_' . $validated['tahun'], 3600, function() use ($validated) {
+                return \App\Models\Skp::where('user_id', Auth::id())
+                    ->where('tahun', $validated['tahun'])
+                    ->select('id', 'user_id', 'tahun', 'target_kuantitas', 'target_waktu')
+                    ->first();
+            });
             
             if ($skp) {
                 if (!$targetLkh && $skp->target_kuantitas) {
@@ -236,10 +248,17 @@ class LaporanBulananController extends Controller
         $rencanaFinal = $validated['rencana_bulan_depan'] ?? null;
         
         // Load LKH sekali untuk semua generate functions (jika diperlukan)
+        // Optimasi: Select spesifik kolom + limit
         $lkhSelected = null;
         if (empty($ringkasanFinal) || empty($pencapaianFinal) || empty($kendalaFinal) || empty($rencanaFinal)) {
-            $lkhSelected = Lkh::whereIn('id', $lkhIds)
-                ->with(['kategoriKegiatan', 'user'])
+            $lkhSelected = Lkh::select('id', 'kategori_kegiatan_id', 'tanggal', 'uraian_kegiatan', 
+                                      'waktu_mulai', 'waktu_selesai', 'kendala', 'user_id')
+                ->whereIn('id', $lkhIds)
+                ->with([
+                    'kategoriKegiatan:id,nama',
+                    'user:id,name'
+                ])
+                ->limit(500) // Batasi load maksimal 500 LKH
                 ->get();
         }
         
@@ -297,7 +316,26 @@ class LaporanBulananController extends Controller
      */
     public function show(string $id)
     {
-        $laporan = LaporanBulanan::with(['user', 'lkh.kategoriKegiatan'])
+        // Optimasi: Select spesifik dan batasi data yang di-load
+        $laporan = LaporanBulanan::with([
+            'user:id,name,nip,jabatan',
+            'lkh' => function($q) {
+                $q->select('lkh.id', 'kategori_kegiatan_id', 'tanggal', 'uraian_kegiatan', 
+                          'waktu_mulai', 'waktu_selesai')
+                  ->with('kategoriKegiatan:id,nama')
+                  ->limit(500); // Batasi LKH yang ditampilkan
+            },
+            'skp:id,user_id,target_kuantitas,target_waktu'
+        ])->findOrFail($id);
+            'user:id,name,nip,jabatan',
+            'lkh' => function($q) {
+                $q->select('lkh.id', 'kategori_kegiatan_id', 'tanggal', 'uraian_kegiatan', 
+                          'waktu_mulai', 'waktu_selesai')
+                  ->with('kategoriKegiatan:id,nama')
+                  ->limit(500); // Batasi LKH yang ditampilkan
+            },
+            'skp:id,user_id,target_kuantitas,target_waktu'
+        ])->findOrFail($id);
             ->findOrFail($id);
 
         // Cek akses

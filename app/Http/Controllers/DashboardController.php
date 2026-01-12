@@ -79,8 +79,8 @@ class DashboardController extends Controller
             'selesai' => $lkhStats['selesai'] ?? 0,
         ];
 
-        // Total pegawai aktif - cache jika memungkinkan
-        $totalPegawai = \Cache::remember('total_pegawai_aktif', 3600, function () {
+        // Optimasi: Total pegawai aktif - cache lebih lama (rarely changes)
+        $totalPegawai = \Cache::remember('total_pegawai_aktif', 86400, function () {
             return User::aktif()
                 ->where('role', '!=', 'kepala_kua')
                 ->count();
@@ -97,13 +97,12 @@ class DashboardController extends Controller
         $lkhHariIni = Lkh::whereDate('tanggal', Carbon::today())
             ->count();
 
-        // Optimasi statistik mingguan: Query sekali untuk semua data, lalu group di PHP
-        $allLkhInMonth = Lkh::select('tanggal')
+        // Optimasi statistik mingguan: Query database sekali dengan aggregate
+        $weeklyStats = \DB::table('lkh')
+            ->select(\DB::raw('WEEK(tanggal, 1) - WEEK(?, 1) + 1 as week_num'), \DB::raw('COUNT(*) as total'))
             ->whereBetween('tanggal', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
-            ->get()
-            ->groupBy(function($lkh) {
-                return Carbon::parse($lkh->tanggal)->weekOfMonth;
-            });
+            ->groupBy('week_num')
+            ->pluck('total', 'week_num');
 
         $statistikMingguan = [];
         $currentWeek = $startOfMonth->copy();
@@ -118,7 +117,7 @@ class DashboardController extends Controller
             $statistikMingguan[] = [
                 'minggu' => 'Minggu ' . $weekNumber,
                 'tanggal' => $currentWeek->format('d/m') . ' - ' . $weekEnd->format('d/m'),
-                'total' => $allLkhInMonth->get($weekNumber, collect())->count()
+                'total' => $weeklyStats->get($weekNumber, 0) // Ambil dari hasil aggregate
             ];
 
             $currentWeek->addWeek()->startOfWeek();
