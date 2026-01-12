@@ -6,6 +6,7 @@ use App\Models\LaporanBulanan;
 use App\Models\Lkh;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class LaporanBulananController extends Controller
