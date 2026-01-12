@@ -245,13 +245,22 @@ class LkhController extends Controller
             'tanggal' => 'required|date',
             'kategori_kegiatan_id' => 'nullable|exists:kategori_kegiatan,id',
             'uraian_kegiatan' => 'required|string|max:500',
-            'waktu_mulai' => 'required|date_format:H:i',
-            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+            'waktu_mulai' => 'required',
+            'waktu_selesai' => 'required',
             'hasil_output' => 'nullable|string',
             'kendala' => 'nullable|string',
             'tindak_lanjut' => 'nullable|string',
             'lampiran' => 'nullable|url', // Link drive, bukan file upload
         ]);
+        
+        // Normalize waktu ke format H:i
+        $validated['waktu_mulai'] = substr($validated['waktu_mulai'], 0, 5);
+        $validated['waktu_selesai'] = substr($validated['waktu_selesai'], 0, 5);
+        
+        // Validasi waktu selesai harus setelah waktu mulai
+        if ($validated['waktu_selesai'] <= $validated['waktu_mulai']) {
+            return back()->withErrors(['waktu_selesai' => 'Waktu selesai harus setelah waktu mulai'])->withInput();
+        }
 
         // FORCE status ke selesai saat create baru
         // LKH langsung selesai tanpa draft
@@ -439,13 +448,25 @@ class LkhController extends Controller
             'tanggal' => 'required|date',
             'kategori_kegiatan_id' => 'nullable|exists:kategori_kegiatan,id',
             'uraian_kegiatan' => 'required|string|max:500',
-            'waktu_mulai' => 'required|date_format:H:i',
-            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+            'waktu_mulai' => 'required',
+            'waktu_selesai' => 'required',
             'hasil_output' => 'nullable|string',
             'kendala' => 'nullable|string',
             'tindak_lanjut' => 'nullable|string',
             'lampiran' => 'nullable|url', // Link drive, bukan file upload
         ]);
+
+        // Normalize waktu ke format H:i
+        $validated['waktu_mulai'] = substr($validated['waktu_mulai'], 0, 5);
+        $validated['waktu_selesai'] = substr($validated['waktu_selesai'], 0, 5);
+        
+        // Validasi waktu selesai harus setelah waktu mulai
+        if ($validated['waktu_selesai'] <= $validated['waktu_mulai']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Waktu selesai harus setelah waktu mulai'
+            ], 422);
+        }
 
         $validated['kategori_kegiatan_id'] = $validated['kategori_kegiatan_id'] ?? null;
         

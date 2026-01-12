@@ -270,13 +270,13 @@
                                     <label class="block text-xs font-medium text-gray-700 mb-0.5">Waktu *</label>
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
-                                            <input type="time" name="waktu_mulai" id="edit-waktu_mulai" required
+                                            <input type="time" name="waktu_mulai" id="edit-waktu_mulai" step="1" required
                                                    value="${lkh.waktu_mulai ? (typeof lkh.waktu_mulai === 'string' ? lkh.waktu_mulai.substring(0, 5) : lkh.waktu_mulai) : ''}"
                                                    placeholder="Mulai"
                                                    class="w-full text-xs px-2.5 py-1.5 rounded border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                         </div>
                                         <div>
-                                            <input type="time" name="waktu_selesai" id="edit-waktu_selesai" required
+                                            <input type="time" name="waktu_selesai" id="edit-waktu_selesai" step="1" required
                                                    value="${lkh.waktu_selesai ? (typeof lkh.waktu_selesai === 'string' ? lkh.waktu_selesai.substring(0, 5) : lkh.waktu_selesai) : ''}"
                                                    placeholder="Selesai"
                                                    class="w-full text-xs px-2.5 py-1.5 rounded border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
@@ -472,11 +472,11 @@
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-0.5">Waktu *</label>
                                     <div class="grid grid-cols-2 gap-2">
-                                        <input type="time" name="waktu_mulai" id="create-waktu_mulai-show" required
+                                        <input type="time" name="waktu_mulai" id="create-waktu_mulai-show" step="1" required
                                                value="${sourceLkh ? sourceLkh.waktu_mulai : ''}"
                                                placeholder="Mulai"
                                                class="w-full text-xs px-2.5 py-1.5 rounded border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                                        <input type="time" name="waktu_selesai" id="create-waktu_selesai-show" required
+                                        <input type="time" name="waktu_selesai" id="create-waktu_selesai-show" step="1" required
                                                value="${sourceLkh ? sourceLkh.waktu_selesai : ''}"
                                                placeholder="Selesai"
                                                class="w-full text-xs px-2.5 py-1.5 rounded border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
