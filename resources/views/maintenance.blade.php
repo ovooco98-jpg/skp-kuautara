@@ -50,11 +50,11 @@
                 <ul class="space-y-2 text-gray-700">
                     <li class="flex items-start">
                         <span class="text-green-500 mr-2">✓</span>
-                        <span>Optimasi performa database dan query</span>
+                        <span>Optimasi performa aplikasi</span>
                     </li>
                     <li class="flex items-start">
                         <span class="text-green-500 mr-2">✓</span>
-                        <span>Recovery dan backup data sistem</span>
+                        <span>Penambahan Kategori Untuk LKH</span>
                     </li>
                     <li class="flex items-start">
                         <span class="text-yellow-500 mr-2">⏳</span>
@@ -65,7 +65,7 @@
 
             <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white text-center">
                 <p class="text-sm mb-2 opacity-90">Estimasi Selesai</p>
-                <p class="text-3xl font-bold mb-1">~30 Menit</p>
+                <p class="text-3xl font-bold mb-1">~1 hari</p>
                 <p class="text-sm opacity-90">Sistem akan kembali normal segera</p>
             </div>
         </div>
