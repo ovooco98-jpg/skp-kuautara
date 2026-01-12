@@ -333,16 +333,6 @@ class LaporanBulananController extends Controller
             },
             'skp:id,user_id,target_kuantitas,target_waktu'
         ])->findOrFail($id);
-            'user:id,name,nip,jabatan',
-            'lkh' => function($q) {
-                $q->select('lkh.id', 'kategori_kegiatan_id', 'tanggal', 'uraian_kegiatan', 
-                          'waktu_mulai', 'waktu_selesai')
-                  ->with('kategoriKegiatan:id,nama')
-                  ->limit(500); // Batasi LKH yang ditampilkan
-            },
-            'skp:id,user_id,target_kuantitas,target_waktu'
-        ])->findOrFail($id);
-            ->findOrFail($id);
 
         // Cek akses
         if (!Auth::user()->isKepalaKua() && $laporan->user_id !== Auth::id()) {
