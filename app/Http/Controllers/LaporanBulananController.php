@@ -130,12 +130,17 @@ class LaporanBulananController extends Controller
 
         // Ambil target dari SKP jika ada
         // Optimasi: Cache SKP query
-        $skp = \Cache::remember('skp_user_' . Auth::id() . '_' . $tahun, 3600, function() use ($tahun) {
+        $targetLkhOtomatis = 0;
+        $targetDurasiOtomatis = 0;
+        
+        $skp = Cache::remember('skp_user_' . Auth::id() . '_' . $tahun, 3600, function() use ($tahun) {
             return \App\Models\Skp::where('user_id', Auth::id())
                 ->where('tahun', $tahun)
                 ->select('id', 'user_id', 'tahun', 'target_kuantitas', 'target_waktu')
                 ->first();
         });
+        
+        if ($skp) {
             if ($skp->target_kuantitas) {
                 $targetLkhOtomatis = $skp->target_kuantitas;
             }
