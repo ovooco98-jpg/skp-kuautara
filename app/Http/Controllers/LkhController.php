@@ -253,9 +253,15 @@ class LkhController extends Controller
             'lampiran' => 'nullable|url', // Link drive, bukan file upload
         ]);
 
+        // FORCE status ke selesai saat create baru
+        // LKH langsung selesai tanpa draft
         $validated['user_id'] = Auth::id();
-        $validated['status'] = 'draft';
+        $validated['status'] = 'selesai'; // ALWAYS selesai, tidak ada draft
         $validated['kategori_kegiatan_id'] = $validated['kategori_kegiatan_id'] ?? null;
+        
+        // Hapus status dari request jika ada yang mencoba override
+        unset($validated['status']);
+        $validated['status'] = 'selesai';
 
         $lkh = Lkh::create($validated);
 
@@ -427,10 +433,10 @@ class LkhController extends Controller
 
         $validated['kategori_kegiatan_id'] = $validated['kategori_kegiatan_id'] ?? null;
         
-        // Update status jika ada, jika tidak tetap status yang lama
-        if (isset($validated['status'])) {
-            $lkh->status = $validated['status'];
-        }
+        // JANGAN update status via update method
+        // Status hanya bisa diubah via updateStatus method untuk tracking yang lebih baik
+        // Hapus status dari validated data jika ada
+        unset($validated['status']);
 
         $tanggalLama = $lkh->tanggal;
         $lkh->update($validated);
