@@ -356,7 +356,7 @@ class LaporanTriwulananController extends Controller
         if ($kategoriStats->isNotEmpty()) {
             $pencapaian .= "\nKategori kegiatan utama:\n";
             foreach ($kategoriStats as $stat) {
-                $pencapaian .= "- {$stat['nama']}: {$stat['jumlah']} kegiatan (" . number_format($stat['durasi'], 1) . " jam)\n";
+                $pencapaian .= "- {$stat->nama}: {$stat->jumlah} kegiatan (" . number_format($stat->durasi, 1) . " jam)\n";
             }
         }
         
@@ -446,7 +446,7 @@ class LaporanTriwulananController extends Controller
         if ($kategoriFavorit->isNotEmpty()) {
             $rencana .= "Fokus kegiatan yang akan dilanjutkan:\n";
             foreach ($kategoriFavorit as $kategori) {
-                $rencana .= "• Meningkatkan kegiatan {$kategori['nama']}\n";
+                $rencana .= "• Meningkatkan kegiatan {$kategori->nama}\n";
             }
         }
 
