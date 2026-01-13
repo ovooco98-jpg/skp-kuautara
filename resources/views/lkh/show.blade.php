@@ -167,17 +167,17 @@
 
 
             <!-- Quick Actions -->
-            <x-card title="Quick Actions">
-                <div class="space-y-1.5">
+            <x-card title="Quick Actions" class="text-sm">
+                <div class="space-y-1">
                     @if($lkh->user_id === Auth::id() || Auth::user()->isKepalaKua())
-                    <button onclick="openEditModal({{ $lkh->id }})" class="w-full px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center justify-center space-x-1.5">
+                    <button onclick="openEditModal({{ $lkh->id }})" class="w-full px-2 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center justify-center space-x-1.5">
                         <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                         </svg>
                         <span>Edit LKH</span>
                     </button>
                     @endif
-                    <button onclick="openCreateModal({{ $lkh->id }})" class="w-full px-2 py-1 text-xs border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition flex items-center justify-center space-x-1.5">
+                    <button onclick="openCreateModal({{ $lkh->id }})" class="w-full px-2 py-1.5 text-xs border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition flex items-center justify-center space-x-1.5">
                         <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
                         </svg>

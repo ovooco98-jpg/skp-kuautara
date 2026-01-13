@@ -167,14 +167,14 @@
                 </x-card>
 
                 <!-- Quick Actions -->
-                <x-card title="Quick Actions">
-                    <div class="space-y-1.5">
-                        <x-button type="button" variant="outline-primary" class="w-full !px-2 !py-1 !text-xs" onclick="generateAutomatic()" size="sm">
+                <x-card title="Quick Actions" class="text-sm">
+                    <div class="space-y-1">
+                        <button type="button" onclick="generateAutomatic()" class="flex items-center justify-center w-full px-2 py-1.5 text-xs border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition">
                             Generate Otomatis
-                        </x-button>
-                        <x-button type="button" variant="secondary" class="w-full !px-2 !py-1 !text-xs" onclick="window.location.reload()" size="sm">
+                        </button>
+                        <button type="button" onclick="window.location.reload()" class="flex items-center justify-center w-full px-2 py-1.5 text-xs border border-gray-600 text-gray-600 rounded-md hover:bg-gray-50 transition">
                             Reset Form
-                        </x-button>
+                        </button>
                     </div>
                 </x-card>
 

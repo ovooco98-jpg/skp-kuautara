@@ -270,7 +270,7 @@ class ExportController extends Controller
             ->with([
                 'user:id,name,nip,jabatan',
                 'laporanBulanan' => function($q) {
-                    $q->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan')
+                    $q->select('laporan_bulanan.id', 'laporan_bulanan.user_id', 'laporan_bulanan.tahun', 'laporan_bulanan.bulan')
                       ->withCount('lkh'); // Hanya count, jangan load semua
                 }
             ])
@@ -300,9 +300,9 @@ class ExportController extends Controller
             ->with([
                 'user:id,name,nip,jabatan',
                 'laporanTriwulanan' => function($q) {
-                    $q->select('id', 'user_id', 'tahun', 'triwulan', 'nama_triwulan')
+                    $q->select('laporan_triwulanan.id', 'laporan_triwulanan.user_id', 'laporan_triwulanan.tahun', 'laporan_triwulanan.triwulan', 'laporan_triwulanan.nama_triwulan')
                       ->with(['laporanBulanan' => function($q2) {
-                          $q2->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan')
+                          $q2->select('laporan_bulanan.id', 'laporan_bulanan.user_id', 'laporan_bulanan.tahun', 'laporan_bulanan.bulan')
                              ->withCount('lkh');
                       }]);
                 }
@@ -385,8 +385,8 @@ class ExportController extends Controller
         $laporan = \App\Models\LaporanBulanan::with([
             'user:id,name,nip,jabatan',
             'lkh' => function($q) {
-                $q->select('id', 'kategori_kegiatan_id', 'tanggal', 'uraian_kegiatan', 
-                          'waktu_mulai', 'waktu_selesai', 'kendala')
+                $q->select('lkh.id', 'lkh.kategori_kegiatan_id', 'lkh.tanggal', 'lkh.uraian_kegiatan', 
+                          'lkh.waktu_mulai', 'lkh.waktu_selesai', 'lkh.kendala')
                   ->with('kategoriKegiatan:id,nama')
                   ->limit(500); // Batasi LKH yang di-load
             },
@@ -448,7 +448,7 @@ class ExportController extends Controller
         $laporan = \App\Models\LaporanTriwulanan::with([
             'user:id,name,nip,jabatan',
             'laporanBulanan' => function($q) {
-                $q->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan', 'total_lkh', 'total_durasi')
+                $q->select('laporan_bulanan.id', 'laporan_bulanan.user_id', 'laporan_bulanan.tahun', 'laporan_bulanan.bulan')
                   ->withCount('lkh'); // Hanya count untuk statistik
             }
         ])->findOrFail($id);
@@ -482,9 +482,9 @@ class ExportController extends Controller
         $laporan = \App\Models\LaporanTahunan::with([
             'user:id,name,nip,jabatan',
             'laporanTriwulanan' => function($q) {
-                $q->select('id', 'user_id', 'tahun', 'triwulan', 'nama_triwulan')
+                $q->select('laporan_triwulanan.id', 'laporan_triwulanan.user_id', 'laporan_triwulanan.tahun', 'laporan_triwulanan.triwulan', 'laporan_triwulanan.nama_triwulan')
                   ->with(['laporanBulanan' => function($q2) {
-                      $q2->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan', 'total_lkh', 'total_durasi')
+                      $q2->select('laporan_bulanan.id', 'laporan_bulanan.user_id', 'laporan_bulanan.tahun', 'laporan_bulanan.bulan')
                          ->withCount('lkh');
                   }]);
             }

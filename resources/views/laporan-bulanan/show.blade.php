@@ -143,18 +143,21 @@
             </x-card>
 
             <!-- Quick Actions -->
-            <x-card title="Quick Actions">
-                <div class="space-y-1.5">
-                    <x-button href="{{ route('print.laporan-bulanan', $laporan->id) }}" target="_blank" variant="primary" class="w-full !px-2 !py-1 !text-xs" icon="printer" size="sm">
+            <x-card title="Quick Actions" class="text-sm">
+                <div class="space-y-1">
+                    <a href="{{ route('print.laporan-bulanan', $laporan->id) }}" target="_blank" class="flex items-center w-full px-2 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                        <x-icon name="printer" class="mr-1.5 h-3.5 w-3.5" />
                         Cetak Laporan
-                    </x-button>
-                    <x-button href="{{ route('export.laporan-bulanan') }}?bulan={{ $laporan->bulan }}&tahun={{ $laporan->tahun }}" variant="outline-primary" class="w-full !px-2 !py-1 !text-xs" icon="document" size="sm">
+                    </a>
+                    <a href="{{ route('export.laporan-bulanan') }}?bulan={{ $laporan->bulan }}&tahun={{ $laporan->tahun }}" class="flex items-center w-full px-2 py-1.5 text-xs border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition">
+                        <x-icon name="document" class="mr-1.5 h-3.5 w-3.5" />
                         Export Laporan
-                    </x-button>
+                    </a>
                     @if($laporan->user_id === Auth::id() || Auth::user()->isKepalaKua())
-                    <x-button href="{{ route('laporan-bulanan.edit', $laporan->id) }}" variant="outline-primary" class="w-full !px-2 !py-1 !text-xs" icon="pencil" size="sm">
+                    <a href="{{ route('laporan-bulanan.edit', $laporan->id) }}" class="flex items-center w-full px-2 py-1.5 text-xs border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition">
+                        <x-icon name="pencil" class="mr-1.5 h-3.5 w-3.5" />
                         Edit Laporan
-                    </x-button>
+                    </a>
                     @endif
                 </div>
             </x-card>
