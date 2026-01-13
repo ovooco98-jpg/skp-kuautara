@@ -396,13 +396,13 @@
                                     <label class="block text-xs font-medium text-gray-700 mb-0.5">Waktu *</label>
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
-                                            <input type="time" name="waktu_mulai" id="create-waktu_mulai" required
+                                            <input type="time" name="waktu_mulai" id="create-waktu_mulai" step="1" required
                                                    value="${sourceLkh ? sourceLkh.waktu_mulai : ''}"
                                                    placeholder="Mulai"
                                                    class="w-full text-xs px-2.5 py-1.5 rounded border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                         </div>
                                         <div>
-                                            <input type="time" name="waktu_selesai" id="create-waktu_selesai" required
+                                            <input type="time" name="waktu_selesai" id="create-waktu_selesai" step="1" required
                                                    value="${sourceLkh ? sourceLkh.waktu_selesai : ''}"
                                                    placeholder="Selesai"
                                                    class="w-full text-xs px-2.5 py-1.5 rounded border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
@@ -476,7 +476,7 @@
                             </button>
                             <button type="submit" id="create-submit-btn"
                                     class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-                                Simpan sebagai Draft
+                                Simpan LKH
                             </button>
                         </div>
                     </form>
@@ -569,14 +569,14 @@
             } else {
                 alert('Error: ' + (data.message || 'Gagal menyimpan LKH'));
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Simpan sebagai Draft';
+                submitBtn.textContent = 'Simpan LKH';
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('Terjadi kesalahan saat menyimpan LKH');
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Simpan sebagai Draft';
+            submitBtn.textContent = 'Simpan LKH';
         });
     }
 
@@ -655,13 +655,13 @@
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Waktu Mulai *</label>
-                                        <input type="time" name="waktu_mulai" id="edit-waktu_mulai" required
+                                        <input type="time" name="waktu_mulai" id="edit-waktu_mulai" step="1" required
                                                value="${lkh.waktu_mulai || ''}"
                                                class="w-full text-sm px-3 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Waktu Selesai *</label>
-                                        <input type="time" name="waktu_selesai" id="edit-waktu_selesai" required
+                                        <input type="time" name="waktu_selesai" id="edit-waktu_selesai" step="1" required
                                                value="${lkh.waktu_selesai || ''}"
                                                class="w-full text-sm px-3 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                     </div>

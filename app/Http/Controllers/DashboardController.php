@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -98,8 +99,8 @@ class DashboardController extends Controller
             ->count();
 
         // Optimasi statistik mingguan: Query database sekali dengan aggregate
-        $weeklyStats = \DB::table('lkh')
-            ->select(\DB::raw('WEEK(tanggal, 1) - WEEK(?, 1) + 1 as week_num'), \DB::raw('COUNT(*) as total'))
+        $weeklyStats = DB::table('lkh')
+            ->selectRaw('WEEK(tanggal, 1) as week_num, COUNT(*) as total')
             ->whereBetween('tanggal', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
             ->groupBy('week_num')
             ->pluck('total', 'week_num');
@@ -125,12 +126,24 @@ class DashboardController extends Controller
         }
 
         // Recent LKH untuk dashboard - optimasi dengan select spesifik
+        // Filter hanya user yang masih aktif dan milik staff (bukan kepala kua)
         $lkhTerakhir = Lkh::select('id', 'uraian_kegiatan', 'waktu_mulai', 'waktu_selesai', 'status', 'tanggal', 'user_id')
-            ->with('user:id,name')
+            ->whereHas('user', function($query) {
+                $query->where('role', '!=', 'kepala_kua')
+                      ->where('is_active', true);
+            })
+            ->with(['user' => function($query) {
+                $query->select('id', 'name')->where('is_active', true);
+            }])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get()
             ->map(function($lkh) {
+                // Skip jika user tidak ada
+                if (!$lkh->user) {
+                    return null;
+                }
+                
                 $waktuMulai = $lkh->waktu_mulai;
                 $waktuSelesai = $lkh->waktu_selesai;
                 
@@ -162,7 +175,9 @@ class DashboardController extends Controller
                         'name' => $lkh->user->name ?? 'Unknown'
                     ]
                 ];
-            });
+            })
+            ->filter(fn($item) => $item !== null)  // Remove null items
+            ->values();  // Re-index array
 
         return response()->json([
             'success' => true,

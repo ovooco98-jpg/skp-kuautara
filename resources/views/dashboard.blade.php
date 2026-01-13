@@ -60,8 +60,8 @@
             <div class="p-5 bg-amber-600">
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
-                        <p class="text-amber-50 text-xs font-medium uppercase tracking-wide mb-2">LKH Draft</p>
-                        <p class="text-3xl font-bold text-white mb-0" id="draft-count">0</p>
+                        <p class="text-amber-50 text-xs font-medium uppercase tracking-wide mb-2">Total LKH</p>
+                        <p class="text-3xl font-bold text-white mb-0" id="total-lkh-count">0</p>
                     </div>
                     <div class="ml-4 flex-shrink-0">
                         <div class="bg-amber-500/30 rounded-lg p-2.5">
@@ -210,11 +210,11 @@
                     const stats = dashboardData.lkh_bulan_ini;
                     const totalLkhEl = document.getElementById('total-lkh');
                     const selesaiCountEl = document.getElementById('selesai-count');
-                    const draftCountEl = document.getElementById('draft-count');
+                    const totalLkhCountEl = document.getElementById('total-lkh-count');
                     
                     if (totalLkhEl) totalLkhEl.textContent = dashboardData.total_lkh_bulan_ini || 0;
                     if (selesaiCountEl) selesaiCountEl.textContent = stats.selesai || 0;
-                    if (draftCountEl) draftCountEl.textContent = stats.draft || 0;
+                    if (totalLkhCountEl) totalLkhCountEl.textContent = (stats.draft || 0) + (stats.selesai || 0);
                     
                     // LKH hari ini count
                     if (dashboardData.lkh_hari_ini) {
@@ -271,11 +271,11 @@
                     const total = stats.draft + stats.selesai;
                     const totalLkhEl = document.getElementById('total-lkh');
                     const selesaiCountEl = document.getElementById('selesai-count');
-                    const draftCountEl = document.getElementById('draft-count');
+                    const totalLkhCountEl = document.getElementById('total-lkh-count');
                     
                     if (totalLkhEl) totalLkhEl.textContent = total;
                     if (selesaiCountEl) selesaiCountEl.textContent = stats.selesai || 0;
-                    if (draftCountEl) draftCountEl.textContent = stats.draft || 0;
+                    if (totalLkhCountEl) totalLkhCountEl.textContent = (stats.draft || 0) + (stats.selesai || 0);
                 }
 
                 // Update recent LKH for Kepala KUA
@@ -326,7 +326,7 @@
             console.error('Error loading dashboard:', error);
             
             // Update stats dengan 0 jika error
-            const statsIds = ['total-lkh', 'selesai-count', 'draft-count', 'total-pegawai', 'lkh-hari-ini-count'];
+            const statsIds = ['total-lkh', 'selesai-count', 'total-lkh-count', 'total-pegawai', 'lkh-hari-ini-count'];
             statsIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.textContent = '0';

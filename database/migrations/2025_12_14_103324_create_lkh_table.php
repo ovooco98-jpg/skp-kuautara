@@ -23,7 +23,7 @@ return new class extends Migration
             $table->text('kendala')->nullable();
             $table->text('tindak_lanjut')->nullable();
             $table->string('lampiran')->nullable();
-            $table->enum('status', ['draft', 'selesai'])->default('draft');
+            $table->enum('status', ['draft', 'selesai'])->default('selesai');
             $table->timestamps();
 
             // Index untuk performa query
