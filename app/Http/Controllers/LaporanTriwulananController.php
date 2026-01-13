@@ -86,11 +86,7 @@ class LaporanTriwulananController extends Controller
                     $q->where('role', '!=', 'kepala_kua')
                       ->orWhere('id', Auth::id());
                 })
-                ->with([
-                    'user:id,name,jabatan',
-                    // Hindari eager load semua lkh, gunakan count dan aggregate saja
-                ])
-                ->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan', 'total_lkh', 'total_durasi')
+                ->with(['user:id,name,jabatan'])
                 ->withCount('lkh')
                 ->orderBy('user_id', 'asc')
                 ->orderBy('bulan', 'asc')
@@ -99,7 +95,6 @@ class LaporanTriwulananController extends Controller
             $laporanBulanan = LaporanBulanan::byUser(Auth::id())
                 ->where('tahun', $tahun)
                 ->whereBetween('bulan', [$bulanMulai, $bulanSelesai])
-                ->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan', 'total_lkh', 'total_durasi')
                 ->withCount('lkh')
                 ->orderBy('bulan', 'asc')
                 ->get();
@@ -208,8 +203,7 @@ class LaporanTriwulananController extends Controller
         $laporan = LaporanTriwulanan::with([
             'user:id,name,nip,jabatan',
             'laporanBulanan' => function($q) {
-                $q->select('id', 'user_id', 'tahun', 'bulan', 'nama_bulan', 'total_lkh', 'total_durasi')
-                  ->withCount('lkh'); // Hanya count untuk performa
+                $q->withCount('lkh'); // Hanya count untuk performa
             }
         ])->findOrFail($id);
 
